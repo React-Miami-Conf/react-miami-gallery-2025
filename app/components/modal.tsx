@@ -13,7 +13,7 @@ export default function Modal({
   images,
   onClose,
 }: {
-  images: any
+  images: ImageProps[]
   onClose?: () => void
 }) {
   let overlayRef = useRef<HTMLDivElement>(null)

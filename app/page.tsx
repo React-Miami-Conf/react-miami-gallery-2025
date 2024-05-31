@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Pump } from 'basehub/react-pump'
 import { draftMode } from 'next/headers'
 import Gallery from "./components/gallery";
+import { ImageProps } from "./utils/types";
 
 export default function Home() {
   return (
@@ -23,7 +24,7 @@ export default function Home() {
       {async ([data]) => {
         'use server'
         
-        let reducedResults: any = []
+        let reducedResults: ImageProps[] = []
         const newImages = data.images.items
 
         let i = 0
@@ -31,8 +32,8 @@ export default function Home() {
         for (let image of newImages) {
           reducedResults.push({
             id: i,
-            url: image?.image?.url,
-            alt: image?.image?.alt,
+            url: image?.image?.url || '',
+            alt: image?.image?.alt || '',
           })
           i++
         }

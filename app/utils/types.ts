@@ -1,17 +1,13 @@
-/*export type Image = {
-    url: string;
-    alt: string;
-}
-
 export type ImageProps = {
-    title: string;
-    image: Image;
-}*/
+    id: number
+    url: string
+    alt: string
+}
 
 export interface SharedModalProps {
     index: number
-    images?: any
-    currentPhoto?: any
+    images?: ImageProps[]
+    currentPhoto?: ImageProps
     changePhotoId: (newVal: number) => void
     closeModal: () => void
     navigation: boolean

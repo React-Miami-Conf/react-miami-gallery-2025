@@ -29,7 +29,7 @@ import {
   }: SharedModalProps) {
     const [loaded, setLoaded] = useState(false)
   
-    let filteredImages = images?.filter((img: any) =>
+    let filteredImages = images?.filter((img: ImageProps) =>
       range(index - 15, index + 15).includes(img.id)
     )
   
@@ -158,7 +158,7 @@ import {
                   className="mx-auto mt-6 mb-6 flex aspect-[3/2] h-14"
                 >
                   <AnimatePresence initial={false}>
-                    {filteredImages?.map(({ id, url}: any) => (
+                    {filteredImages?.map(({ id, url}: ImageProps) => (
                       <motion.button
                         initial={{
                           width: '0%',
