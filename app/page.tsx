@@ -3,6 +3,7 @@ import { Pump } from 'basehub/react-pump'
 import { draftMode } from 'next/headers'
 import Gallery from "./components/gallery";
 import { ImageProps } from "./utils/types";
+import { Suspense } from "react";
 
 export default function Home() {
   return (
@@ -40,7 +41,9 @@ export default function Home() {
 
         return (
           <main className="mx-auto max-w-[1960px] p-4">
-            <Gallery images={reducedResults} />
+            <Suspense>
+              <Gallery images={reducedResults} />
+            </Suspense>
           </main>
         )
       }}
