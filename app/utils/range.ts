@@ -5,6 +5,7 @@ export const range = (start: number, end: number) => {
       start = 0
     }
     for (let i = start; i < end; i += 1) {
+      // @ts-ignore
       output.push(i)
     }
     return output
