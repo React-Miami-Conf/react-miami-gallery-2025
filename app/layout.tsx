@@ -7,6 +7,16 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "React Miami Gallery",
   description: "React Miami 2024 Photo Gallery",
+  openGraph: {
+    title: {
+      template: 'React Miami Gallery',
+      default: 'React Miami 2024 Photo Gallery',
+    },
+    images: '/og.png',
+    siteName: 'React Miami',
+    locale: 'en_US',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({
