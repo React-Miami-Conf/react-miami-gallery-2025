@@ -75,7 +75,7 @@ import {
                   className="absolute"
                 >
                   <Image
-                    src={currentImage?.url}
+                    src={currentImage?.url || '/default-image.png'}
                     width={navigation ? 1280 : 1920}
                     height={navigation ? 853 : 1280}
                     priority
