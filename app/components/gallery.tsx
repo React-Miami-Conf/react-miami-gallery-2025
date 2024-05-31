@@ -29,6 +29,7 @@ export default function Gallery({ images }: { images: ImageProps[] }) {
         <Modal
           images={images}
           onClose={() => {
+            // @ts-ignore
             setLastViewedPhoto(photoId)
           }}
         />
