@@ -28,6 +28,7 @@ export default function Modal({
 
   function handleClose() {
     router.push('/', undefined)
+    // @ts-ignore
     onClose()
   }
 
