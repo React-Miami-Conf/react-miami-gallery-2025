@@ -30,6 +30,7 @@ import {
     const [loaded, setLoaded] = useState(false)
   
     let filteredImages = images?.filter((img: ImageProps) =>
+      //@ts-ignore
       range(index - 15, index + 15).includes(img.id)
     )
   
