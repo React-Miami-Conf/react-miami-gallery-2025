@@ -7,11 +7,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   metadataBase: new URL('https://react-miami-gallery-2024.vercel.app/'),
   title: "React Miami Gallery",
-  description: "React Miami 2024 Photo Gallery",
+  description: "React Miami 2024 Image Gallery",
   openGraph: {
     title: {
       template: 'React Miami Gallery',
-      default: 'React Miami 2024 Photo Gallery',
+      default: 'React Miami 2024 Image Gallery',
     },
     images: '/og.png',
     siteName: 'React Miami',
