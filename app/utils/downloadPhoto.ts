@@ -8,6 +8,7 @@ function forceDownload(blobUrl: string, filename: string) {
   }
   
   export default function downloadPhoto(url: string, filename: string) {
+    // @ts-ignore
     if (!filename) filename = url.split('\\').pop().split('/').pop()
     fetch(url, {
       headers: new Headers({
