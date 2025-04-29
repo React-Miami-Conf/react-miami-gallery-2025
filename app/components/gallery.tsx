@@ -22,6 +22,8 @@ export default function Gallery({ collections }: GalleryProps) {
   const [selectedTab, setSelectedTab] = useState(collectionNames[0]);
   const [tabTransitioning, setTabTransitioning] = useState(false);
   const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const [imagesLoadedCount, setImagesLoadedCount] = useState(0);
+  const [expectedImageCount, setExpectedImageCount] = useState(0);
   const images = collections[selectedTab] || [];
 
   const searchParams = useSearchParams();
@@ -90,9 +92,11 @@ export default function Gallery({ collections }: GalleryProps) {
                 if (name !== selectedTab && !tabTransitioning) {
                   setTabTransitioning(true);
                   setPendingTab(name);
+                  setImagesLoadedCount(0);
+                  setExpectedImageCount(collections[name]?.length || 0);
                   setTimeout(() => {
                     setSelectedTab(name);
-                    setTabTransitioning(false);
+                    // Do NOT clear tabTransitioning here; wait until images loaded
                     setPendingTab(null);
                   }, 400); // duration matches overlay animation
                 }
@@ -136,6 +140,15 @@ export default function Gallery({ collections }: GalleryProps) {
                   (max-width: 1536px) 33vw,
                   25vw"
                 loading="lazy"
+                onLoad={() => {
+                  setImagesLoadedCount((c) => {
+                    const next = c + 1;
+                    if (tabTransitioning && next >= expectedImageCount && expectedImageCount > 0) {
+                      setTimeout(() => setTabTransitioning(false), 100); // allow a tiny delay for smoothness
+                    }
+                    return next;
+                  });
+                }}
               />
             </Link>
           ))}
