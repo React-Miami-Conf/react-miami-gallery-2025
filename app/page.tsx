@@ -1,6 +1,6 @@
 import Image from "next/image";
-import { Pump } from 'basehub/react-pump'
-import { draftMode } from 'next/headers'
+import { Pump } from "basehub/react-pump";
+import { draftMode } from "next/headers";
 import Gallery from "./components/gallery";
 import { ImageProps } from "./utils/types";
 import { Suspense } from "react";
@@ -8,44 +8,94 @@ import { Suspense } from "react";
 export default function Home() {
   return (
     <Pump
-      queries={[{
-        images: {
-          items: {
-            _title: true,
-            image: {
-              url: true,
-              alt: true,
-            }
-          }
-        } 
-      }]}
+      queries={[
+        {
+          openingParty: {
+            items: {
+              _title: true,
+              media: {
+                __typename: true,
+                on_BlockImage: {
+                  url: true,
+                  alt: true,
+                },
+              },
+            },
+          },
+          day1: {
+            items: {
+              _title: true,
+              media: {
+                __typename: true,
+                on_BlockImage: {
+                  url: true,
+                  alt: true,
+                },
+              },
+            },
+          },
+          day2: {
+            items: {
+              _title: true,
+              media: {
+                __typename: true,
+                on_BlockImage: {
+                  url: true,
+                  alt: true,
+                },
+              },
+            },
+          },
+          afterparty: {
+            items: {
+              _title: true,
+              media: {
+                __typename: true,
+                on_BlockImage: {
+                  url: true,
+                  alt: true,
+                },
+              },
+            },
+          },
+        },
+      ]}
       next={{ revalidate: 30 }}
       draft={draftMode().isEnabled}
     >
       {async ([data]) => {
-        'use server'
-        
-        let reducedResults: ImageProps[] = []
-        const newImages = data.images.items
+        "use server";
 
-        let i = 0
-
-        for (let image of newImages) {
-          reducedResults.push({
-            id: i,
-            url: image?.image?.url || '',
-            alt: image?.image?.alt || '',
-          })
-          i++
+        function mapImages(items: any[]): ImageProps[] {
+          return items.map((image, i) => {
+            const media = image?.media;
+            return {
+              id: i,
+              url: media?.url ?? "",
+              alt: media && "alt" in media ? media.alt ?? "" : "",
+            };
+          });
         }
+
+        const openingParty: ImageProps[] = mapImages(data.openingParty.items);
+        const day1: ImageProps[] = mapImages(data.day1.items);
+        const day2: ImageProps[] = mapImages(data.day2.items);
+        const afterparty: ImageProps[] = mapImages(data.afterparty.items);
 
         return (
           <main className="mx-auto max-w-[1960px] p-4">
             <Suspense>
-              <Gallery images={reducedResults} />
+              <Gallery
+                collections={{
+                  "Opening Party": openingParty,
+                  "Day 1": day1,
+                  "Day 2": day2,
+                  Afterparty: afterparty,
+                }}
+              />
             </Suspense>
           </main>
-        )
+        );
       }}
     </Pump>
   );
