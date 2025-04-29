@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import { ImageProps } from "../utils/types";
 import Modal from "./modal";
 import { useLastViewedPhoto } from "../utils/useLastViewedPhoto";
@@ -48,7 +48,7 @@ const INFINITE_SCROLL_CONFIG = {
     xl: 4
   },
   // Enable debug mode to show scroll information
-  DEBUG_MODE: true
+  DEBUG_MODE: false
 };
 
 type GalleryProps = {
@@ -64,6 +64,9 @@ export default function Gallery({ collections }: GalleryProps) {
   const [loadedImagesCount, setLoadedImagesCount] = useState(0);
   const [scrollPercentage, setScrollPercentage] = useState(0);
   const [pixelsFromBottom, setPixelsFromBottom] = useState(0);
+  
+  // Add router for handling modal without page reload
+  const router = useRouter();
   
   // Maintain visible images count per tab so scroll position persists
   const initialVisibleCounts = collectionNames.reduce((acc, name) => {
@@ -92,11 +95,13 @@ export default function Gallery({ collections }: GalleryProps) {
   // Get visible images based on current load count
   const visibleImages = allImages.slice(0, visibleImagesCount);
 
+  // We need to keep searchParams for compatibility with modal
   const searchParams = useSearchParams();
   const photoId = searchParams.get("photoId");
   const [lastViewedPhoto, setLastViewedPhoto] = useLastViewedPhoto();
 
-  const lastViewedPhotoRef = useRef<HTMLAnchorElement>(null);
+  // Need to update the ref to be HTMLDivElement
+  const lastViewedPhotoRef = useRef<HTMLDivElement>(null);
 
   // Distribute images into columns
   const distributeImagesIntoColumns = (images: ImageProps[], numColumns: number) => {
@@ -355,12 +360,14 @@ export default function Gallery({ collections }: GalleryProps) {
           isNewlyLoaded={isNewlyLoaded}
           delay={staggerDelay}
         >
-          <Link
-            href={`/?photoId=${id}`}
+          <div
+            onClick={() => {
+              // Use router to update URL without page reload
+              router.push(`?photoId=${id}`, { scroll: false });
+            }}
             ref={
               Number(id) === Number(lastViewedPhoto) ? lastViewedPhotoRef : null
             }
-            shallow
             className="after:content group relative block w-full cursor-zoom-in after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:shadow-highlight"
           >
             <Image
@@ -383,7 +390,7 @@ export default function Gallery({ collections }: GalleryProps) {
               ).toString('base64')}`}
               quality={75}
             />
-          </Link>
+          </div>
         </FadeInImageWrapper>
       </div>
     );
@@ -413,7 +420,7 @@ export default function Gallery({ collections }: GalleryProps) {
         <Modal
           images={allImages}
           onClose={() => {
-            // @ts-ignore
+            // @ts-ignore - This is needed for the existing Modal component
             setLastViewedPhoto(photoId);
           }}
         />
