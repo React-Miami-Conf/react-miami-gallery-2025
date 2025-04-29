@@ -6,7 +6,9 @@ import { ImageProps } from "./utils/types";
 import { Suspense } from "react";
 import PreloadImages from "./components/PreloadImages";
 
-export default function Home() {
+export default async function Home() {
+  const { isEnabled } = await draftMode();
+  
   return (
     <Pump
       queries={[
@@ -90,7 +92,7 @@ export default function Home() {
         },
       ]}
       next={{ revalidate: 30 }}
-      draft={draftMode().isEnabled}
+      draft={isEnabled}
     >
       {async ([data]) => {
         "use server";

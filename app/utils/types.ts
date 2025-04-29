@@ -3,6 +3,8 @@ export type ImageProps = {
     url: string
     webUrl: string
     alt: string
+    width?: number
+    height?: number
 }
 
 export interface SharedModalProps {
