@@ -10,7 +10,6 @@ import { useLastViewedPhoto } from "../utils/useLastViewedPhoto";
 import Leaves from "./Icons/Leaves";
 import Logo from "./Icons/Logo";
 import PreloadImages from "./PreloadImages";
-import ImageWithFade from "./ImageWithFade";
 
 type GalleryProps = {
   collections: {
@@ -94,17 +93,29 @@ export default function Gallery({ collections }: GalleryProps) {
       </div>
       {/* Masonry Gallery Grid */}
       <div className="columns-1 gap-4 sm:columns-2 xl:columns-3 2xl:columns-4">
-        {images.map((img: ImageProps) => (
+        {images.map(({ id, webUrl, alt }: ImageProps) => (
           <Link
-            key={img.id}
-            href={`/?photoId=${img.id}`}
+            key={id}
+            href={`/?photoId=${id}`}
             ref={
-              Number(img.id) === Number(lastViewedPhoto) ? lastViewedPhotoRef : null
+              Number(id) === Number(lastViewedPhoto) ? lastViewedPhotoRef : null
             }
             shallow
             className="after:content group relative mb-5 block w-full cursor-zoom-in after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:shadow-highlight"
           >
-            <ImageWithFade image={img} />
+            <Image
+              alt={alt}
+              className="transform rounded-lg brightness-90 transition will-change-auto group-hover:brightness-110"
+              style={{ transform: "translate3d(0, 0, 0)" }}
+              src={webUrl}
+              width={720}
+              height={480}
+              sizes="(max-width: 640px) 100vw,
+                (max-width: 1280px) 50vw,
+                (max-width: 1536px) 33vw,
+                25vw"
+              loading="lazy"
+            />
           </Link>
         ))}
       </div>
