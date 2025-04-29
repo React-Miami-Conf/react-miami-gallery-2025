@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://react-miami-gallery-2025.vercel.app/"),
+  metadataBase: new URL("https://2025.reactmiami.com/"),
   title: "React Miami Gallery",
   description: "React Miami 2025 Image Gallery",
   openGraph: {
