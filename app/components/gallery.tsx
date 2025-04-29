@@ -20,6 +20,8 @@ type GalleryProps = {
 export default function Gallery({ collections }: GalleryProps) {
   const collectionNames = Object.keys(collections);
   const [selectedTab, setSelectedTab] = useState(collectionNames[0]);
+  const [tabTransitioning, setTabTransitioning] = useState(false);
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
   const images = collections[selectedTab] || [];
 
   const searchParams = useSearchParams();
@@ -84,7 +86,18 @@ export default function Gallery({ collections }: GalleryProps) {
                   ? "bg-white text-black border-white"
                   : "bg-transparent text-white border-white/30 hover:bg-white/10"
               }`}
-              onClick={() => setSelectedTab(name)}
+              onClick={() => {
+                if (name !== selectedTab && !tabTransitioning) {
+                  setTabTransitioning(true);
+                  setPendingTab(name);
+                  setTimeout(() => {
+                    setSelectedTab(name);
+                    setTabTransitioning(false);
+                    setPendingTab(null);
+                  }, 400); // duration matches overlay animation
+                }
+              }}
+              disabled={tabTransitioning}
             >
               {name}
             </button>
@@ -92,32 +105,41 @@ export default function Gallery({ collections }: GalleryProps) {
         </div>
       </div>
       {/* Masonry Gallery Grid */}
-      <div className="columns-1 gap-4 sm:columns-2 xl:columns-3 2xl:columns-4">
-        {images.map(({ id, webUrl, alt }: ImageProps) => (
-          <Link
-            key={id}
-            href={`/?photoId=${id}`}
-            ref={
-              Number(id) === Number(lastViewedPhoto) ? lastViewedPhotoRef : null
-            }
-            shallow
-            className="after:content group relative mb-5 block w-full cursor-zoom-in after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:shadow-highlight"
-          >
-            <Image
-              alt={alt}
-              className="transform rounded-lg brightness-90 transition will-change-auto group-hover:brightness-110"
-              style={{ transform: "translate3d(0, 0, 0)" }}
-              src={webUrl}
-              width={720}
-              height={480}
-              sizes="(max-width: 640px) 100vw,
-                (max-width: 1280px) 50vw,
-                (max-width: 1536px) 33vw,
-                25vw"
-              loading="lazy"
-            />
-          </Link>
-        ))}
+      <div className="relative">
+        {/* Sheet wipe overlay */}
+        <div
+          className={`pointer-events-none absolute inset-0 z-30 transition-transform duration-500 ease-in-out
+            ${tabTransitioning ? 'bg-white/5 backdrop-blur-sm translate-x-0' : 'bg-black translate-x-full'}`}
+          
+          style={{ willChange: 'transform' }}
+        />
+        <div className="columns-1 gap-4 sm:columns-2 xl:columns-3 2xl:columns-4">
+          {images.map(({ id, webUrl, alt }: ImageProps) => (
+            <Link
+              key={id}
+              href={`/?photoId=${id}`}
+              ref={
+                Number(id) === Number(lastViewedPhoto) ? lastViewedPhotoRef : null
+              }
+              shallow
+              className="after:content group relative mb-5 block w-full cursor-zoom-in after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:shadow-highlight"
+            >
+              <Image
+                alt={alt}
+                className="transform rounded-lg brightness-90 transition will-change-auto group-hover:brightness-110"
+                style={{ transform: "translate3d(0, 0, 0)" }}
+                src={webUrl}
+                width={720}
+                height={480}
+                sizes="(max-width: 640px) 100vw,
+                  (max-width: 1280px) 50vw,
+                  (max-width: 1536px) 33vw,
+                  25vw"
+                loading="lazy"
+              />
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );
