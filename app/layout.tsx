@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://2025.reactmiami.com/"),
+  metadataBase: new URL("https://2025gallery.reactmiami.com/"),
   title: "React Miami Gallery",
   description: "React Miami 2025 Image Gallery",
   openGraph: {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
       template: "React Miami Gallery",
       default: "React Miami 2025 Image Gallery",
     },
-    images: `og.png?y=25`,
+    images: `og.png`,
     siteName: "React Miami",
     locale: "en_US",
     type: "website",
