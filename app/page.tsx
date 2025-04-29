@@ -21,12 +21,26 @@ export default function Home() {
                   alt: true,
                 },
               },
+              webMedia: {
+                __typename: true,
+                on_BlockImage: {
+                  url: true,
+                  alt: true,
+                },
+              },
             },
           },
           day1: {
             items: {
               _title: true,
               media: {
+                __typename: true,
+                on_BlockImage: {
+                  url: true,
+                  alt: true,
+                },
+              },
+              webMedia: {
                 __typename: true,
                 on_BlockImage: {
                   url: true,
@@ -45,12 +59,26 @@ export default function Home() {
                   alt: true,
                 },
               },
+              webMedia: {
+                __typename: true,
+                on_BlockImage: {
+                  url: true,
+                  alt: true,
+                },
+              },
             },
           },
           afterparty: {
             items: {
               _title: true,
               media: {
+                __typename: true,
+                on_BlockImage: {
+                  url: true,
+                  alt: true,
+                },
+              },
+              webMedia: {
                 __typename: true,
                 on_BlockImage: {
                   url: true,
@@ -73,6 +101,7 @@ export default function Home() {
             return {
               id: i,
               url: media?.url ?? "",
+              webUrl: image?.webMedia?.url ?? "",
               alt: media && "alt" in media ? media.alt ?? "" : "",
             };
           });
@@ -84,12 +113,7 @@ export default function Home() {
         const afterparty: ImageProps[] = mapImages(data.afterparty.items);
 
         // Combine all images for preloading
-        const allImages = [
-          ...openingParty,
-          ...day1,
-          ...day2,
-          ...afterparty,
-        ];
+        const allImages = [...openingParty, ...day1, ...day2, ...afterparty];
 
         return (
           <>

@@ -77,7 +77,7 @@ export default function SharedModal({
                 className="absolute inset-0"
               >
                 <Image
-                  src={currentImage?.url || "/default-image.png"}
+                  src={currentImage?.webUrl || "/default-image.png"}
                   alt={currentImage?.alt || "React Miami Photo"}
                   priority
                   fill

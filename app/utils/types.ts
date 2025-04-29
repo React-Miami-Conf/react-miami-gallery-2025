@@ -1,6 +1,7 @@
 export type ImageProps = {
     id: number
     url: string
+    webUrl: string
     alt: string
 }
 
