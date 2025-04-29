@@ -16,7 +16,6 @@ import { variants } from "../utils/animationVariants";
 import downloadPhoto from "../utils/downloadPhoto";
 import { range } from "../utils/range";
 import type { ImageProps, SharedModalProps } from "../utils/types";
-import Twitter from "./Icons/Twitter";
 
 export default function SharedModal({
   index,
@@ -120,15 +119,6 @@ export default function SharedModal({
                 </>
               )}
               <div className="absolute top-0 right-0 flex items-center gap-2 p-3 text-white">
-                <a
-                  href={`https://twitter.com/intent/tweet?text=Check%20out%20this%20pic%20from%20React%20Miami!%0A%0Ahttps://react-miami-gallery-2024.vercel.app/?photoId=${index}`}
-                  className="rounded-full bg-black/50 p-2 text-white/75 backdrop-blur-lg transition hover:bg-black/75 hover:text-white"
-                  target="_blank"
-                  title="Open fullsize version"
-                  rel="noreferrer"
-                >
-                  <Twitter className="h-5 w-5" />
-                </a>
                 <button
                   onClick={() =>
                     downloadPhoto(`${currentImage?.url}`, `${index}.jpg`)
