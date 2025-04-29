@@ -11,6 +11,25 @@ import Leaves from "./Icons/Leaves";
 import Logo from "./Icons/Logo";
 import { AnimatePresence, motion } from "framer-motion";
 
+// Wrapper component for fade-in animation
+type FadeInImageWrapperProps = {
+  children: React.ReactNode;
+  delay?: number;
+  isNewlyLoaded?: boolean;
+};
+
+const FadeInImageWrapper = ({ children, delay = 0, isNewlyLoaded = false }: FadeInImageWrapperProps) => {
+  return (
+    <motion.div
+      initial={isNewlyLoaded ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
 // Configuration constants for infinite scroll
 const INFINITE_SCROLL_CONFIG = {
   // Number of images to show initially
@@ -18,7 +37,7 @@ const INFINITE_SCROLL_CONFIG = {
   // Number of images to load each time
   IMAGES_PER_BATCH: 12,
   // Root margin in pixels (how far from viewport to trigger loading)
-  ROOT_MARGIN_PX: 800,
+  ROOT_MARGIN_PX: 1200,
   // Trigger threshold (0-1), lower values trigger earlier
   THRESHOLD: 0.01,
   // Number of columns for different breakpoints
@@ -27,7 +46,9 @@ const INFINITE_SCROLL_CONFIG = {
     md: 2,
     lg: 3,
     xl: 4
-  }
+  },
+  // Enable debug mode to show scroll information
+  DEBUG_MODE: true
 };
 
 type GalleryProps = {
@@ -51,6 +72,14 @@ export default function Gallery({ collections }: GalleryProps) {
   }, {} as Record<string, number>);
   const [visibleImagesCounts, setVisibleImagesCounts] = useState<Record<string, number>>(initialVisibleCounts);
   const visibleImagesCount = visibleImagesCounts[selectedTab];
+
+  // Track if infinite scroll is enabled per tab
+  const [infiniteScrollEnabled, setInfiniteScrollEnabled] = useState<Record<string, boolean>>(
+    collectionNames.reduce((acc, name) => {
+      acc[name] = true;
+      return acc;
+    }, {} as Record<string, boolean>)
+  );
 
   const [prefetchedTabs, setPrefetchedTabs] = useState<Set<string>>(new Set([selectedTab]));
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -132,10 +161,17 @@ export default function Gallery({ collections }: GalleryProps) {
       observerRef.current.disconnect();
     }
 
+    // Don't set up observer if infinite scroll is disabled for this tab
+    if (!infiniteScrollEnabled[selectedTab]) {
+      return;
+    }
+
     observerRef.current = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
         if (entry?.isIntersecting && visibleImagesCounts[selectedTab] < allImages.length) {
+          console.log(`[IntersectionObserver] Loading more images for ${selectedTab}`);
+          
           // Add more images when scrolling to the bottom for the current tab
           setVisibleImagesCounts(prev => ({
             ...prev,
@@ -152,19 +188,51 @@ export default function Gallery({ collections }: GalleryProps) {
 
     if (loadMoreTriggerRef.current) {
       observerRef.current.observe(loadMoreTriggerRef.current);
+      console.log(`[Observer] Set up for ${selectedTab} with ${allImages.length} total images and ${visibleImagesCount} visible`);
     }
-  }, [visibleImagesCounts, selectedTab, allImages.length]);
+  }, [visibleImagesCounts, selectedTab, allImages.length, infiniteScrollEnabled]);
 
   // Handle tab change
   const handleTabChange = (tabName: string) => {
     if (tabName !== selectedTab) {
+      // Disconnect current observer before changing tabs
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+      
       setIsLoading(true);
       setLoadedImagesCount(0);
+      
+      // Change the tab before scrolling to avoid visual jumps
       setSelectedTab(tabName);
+
+      // Reset scroll position
+      window.scrollTo(0, 0);
+      
+      // Make sure the infinite scroll is enabled for this tab
+      setInfiniteScrollEnabled(prev => ({
+        ...prev,
+        [tabName]: true
+      }));
+      
+      // Setup tab with correct initial images count if needed
+      if (!visibleImagesCounts[tabName] || visibleImagesCounts[tabName] === 0) {
+        setVisibleImagesCounts(prev => ({
+          ...prev,
+          [tabName]: INFINITE_SCROLL_CONFIG.INITIAL_IMAGES_COUNT
+        }));
+      }
+
       // We'll turn off loading once first batch is loaded
       if (prefetchedTabs.has(tabName)) {
         setTimeout(() => setIsLoading(false), 300);
       }
+      
+      // Force observer reset on next tick after DOM updates
+      setTimeout(() => {
+        setupIntersectionObserver();
+      }, 100);
     }
   };
 
@@ -182,12 +250,22 @@ export default function Gallery({ collections }: GalleryProps) {
 
   // Set up intersection observer for infinite scroll
   useEffect(() => {
-    setupIntersectionObserver();
+    // Always disconnect any existing observer before setting up a new one
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+    
+    // Small delay to ensure DOM has updated
+    const timer = setTimeout(() => {
+      setupIntersectionObserver();
+    }, 100);
     
     return () => {
+      clearTimeout(timer);
       observerRef.current?.disconnect();
     };
-  }, [setupIntersectionObserver]);
+  }, [setupIntersectionObserver, selectedTab]);
 
   // Handle last viewed photo scrolling
   useEffect(() => {
@@ -197,10 +275,10 @@ export default function Gallery({ collections }: GalleryProps) {
     }
   }, [photoId, lastViewedPhoto, setLastViewedPhoto]);
 
-  // Track scroll percentage and distance from bottom
+  // Handle scroll events to detect when we're near the bottom
   useEffect(() => {
     const handleScroll = () => {
-      if (!scrollContainerRef.current) return;
+      if (!scrollContainerRef.current || !infiniteScrollEnabled[selectedTab]) return;
       
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
@@ -217,11 +295,25 @@ export default function Gallery({ collections }: GalleryProps) {
       
       setScrollPercentage(scrolled);
       setPixelsFromBottom(Math.max(0, Math.round(bottom)));
+      
+      // Backup method: If we're close to the bottom and the observer hasn't triggered,
+      // manually load more images
+      if (bottom < INFINITE_SCROLL_CONFIG.ROOT_MARGIN_PX / 2 && 
+          visibleImagesCounts[selectedTab] < collections[selectedTab]?.length) {
+        console.log(`[Scroll Backup] Near bottom, loading more images for ${selectedTab}`);
+        setVisibleImagesCounts(prev => ({
+          ...prev,
+          [selectedTab]: Math.min(
+            prev[selectedTab] + INFINITE_SCROLL_CONFIG.IMAGES_PER_BATCH, 
+            collections[selectedTab]?.length || 0
+          ),
+        }));
+      }
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [selectedTab, visibleImagesCounts, collections, infiniteScrollEnabled]);
 
   // Add effect to prefetch adjacent tabs
   useEffect(() => {
@@ -244,59 +336,78 @@ export default function Gallery({ collections }: GalleryProps) {
     
     const isPriority = columnIndex < 2 && imageIndex === 0;
     
+    // Determine if this is a newly loaded image (for animation)
+    // Images beyond the initial batch will get the fade-in animation
+    const isNewlyLoaded = 
+      // Either it's part of infinite scroll loading
+      (visibleImagesCount > INFINITE_SCROLL_CONFIG.INITIAL_IMAGES_COUNT && 
+        imageIndex + (columnIndex * Math.ceil(visibleImagesCount / 4)) >= INFINITE_SCROLL_CONFIG.INITIAL_IMAGES_COUNT) ||
+      // Or it's part of the initial loading of a new tab
+      (loadedImagesCount < INFINITE_SCROLL_CONFIG.INITIAL_IMAGES_COUNT && !isLoading);
+    
+    // Calculate staggered delay - different columns start animating at different times
+    // For a natural cascade effect
+    const staggerDelay = isNewlyLoaded ? 0.05 * (imageIndex % 8) + (0.03 * columnIndex) : 0;
+    
     return (
-      <div 
-        key={`${selectedTab}-${id}-col${columnIndex}`}
-        className="mb-4 w-full"
-      >
-        <Link
-          href={`/?photoId=${id}`}
-          ref={
-            Number(id) === Number(lastViewedPhoto) ? lastViewedPhotoRef : null
-          }
-          shallow
-          className="after:content group relative block w-full cursor-zoom-in after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:shadow-highlight"
+      <div key={`${selectedTab}-${id}-col${columnIndex}`} className="mb-4 w-full">
+        <FadeInImageWrapper 
+          isNewlyLoaded={isNewlyLoaded}
+          delay={staggerDelay}
         >
-          <Image
-            alt={alt}
-            className="transform rounded-lg brightness-90 transition will-change-auto group-hover:brightness-110"
-            style={{ transform: "translate3d(0, 0, 0)" }}
-            src={webUrl}
-            width={720}
-            height={480}
-            sizes="(max-width: 640px) 100vw,
-              (max-width: 1280px) 50vw,
-              (max-width: 1536px) 33vw,
-              25vw"
-            loading={isPriority ? undefined : "lazy"}
-            onLoad={handleImageLoaded}
-            priority={isPriority}
-            placeholder="blur"
-            blurDataURL={`data:image/svg+xml;base64,${Buffer.from(
-              '<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#2A2A2A"/></svg>'
-            ).toString('base64')}`}
-            quality={75}
-          />
-        </Link>
+          <Link
+            href={`/?photoId=${id}`}
+            ref={
+              Number(id) === Number(lastViewedPhoto) ? lastViewedPhotoRef : null
+            }
+            shallow
+            className="after:content group relative block w-full cursor-zoom-in after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:shadow-highlight"
+          >
+            <Image
+              alt={alt}
+              className="transform rounded-lg brightness-90 transition will-change-auto group-hover:brightness-110"
+              style={{ transform: "translate3d(0, 0, 0)" }}
+              src={webUrl}
+              width={720}
+              height={480}
+              sizes="(max-width: 640px) 100vw,
+                (max-width: 1280px) 50vw,
+                (max-width: 1536px) 33vw,
+                25vw"
+              loading={isPriority ? undefined : "lazy"}
+              onLoad={handleImageLoaded}
+              priority={isPriority}
+              placeholder="blur"
+              blurDataURL={`data:image/svg+xml;base64,${Buffer.from(
+                '<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#2A2A2A"/></svg>'
+              ).toString('base64')}`}
+              quality={75}
+            />
+          </Link>
+        </FadeInImageWrapper>
       </div>
     );
   };
 
   return (
     <div ref={scrollContainerRef}>
-      {/* Scroll Percentage Overlay (Dev Only) */}
-      {/* <div className="fixed bottom-4 right-4 bg-black/70 text-white px-4 py-3 rounded-md font-mono text-sm z-50 flex flex-col">
-        <div>Scroll: {scrollPercentage}%</div>
-        <div>Bottom: {pixelsFromBottom}px</div>
-        <div>Config: {INFINITE_SCROLL_CONFIG.ROOT_MARGIN_PX}px trigger</div>
-        <div>Images: {visibleImagesCount} / {allImages.length}</div>
-        <div className="w-full bg-gray-700 h-2 mt-1 rounded-full overflow-hidden">
-          <div 
-            className="bg-white h-full rounded-full" 
-            style={{ width: `${scrollPercentage}%` }}
-          />
+      {/* Scroll Percentage Overlay (Debug Mode) */}
+      {INFINITE_SCROLL_CONFIG.DEBUG_MODE && (
+        <div className="fixed bottom-4 right-4 bg-black/70 text-white px-4 py-3 rounded-md font-mono text-sm z-50 flex flex-col">
+          <div>Scroll: {scrollPercentage}%</div>
+          <div>Bottom: {pixelsFromBottom}px</div>
+          <div>Config: {INFINITE_SCROLL_CONFIG.ROOT_MARGIN_PX}px trigger</div>
+          <div>Images: {visibleImagesCount} / {allImages.length}</div>
+          <div>Tab: {selectedTab}</div>
+          <div>InfScroll: {infiniteScrollEnabled[selectedTab] ? 'ON' : 'OFF'}</div>
+          <div className="w-full bg-gray-700 h-2 mt-1 rounded-full overflow-hidden">
+            <div 
+              className="bg-white h-full rounded-full" 
+              style={{ width: `${scrollPercentage}%` }}
+            />
+          </div>
         </div>
-      </div> */}
+      )}
 
       {photoId && (
         <Modal
@@ -322,31 +433,47 @@ export default function Gallery({ collections }: GalleryProps) {
         </h1>
         
         {/* Tabs */}
-        <div className="flex gap-2 mt-4 z-10 justify-center">
-          {collectionNames.map((name) => (
-            <button
-              key={name}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm transition border relative overflow-hidden ${
-                selectedTab === name
-                  ? "bg-white text-black border-white"
-                  : "bg-transparent text-white border-white/30 hover:bg-white/10"
-              }`}
-              onClick={() => handleTabChange(name)}
-              onMouseEnter={() => prefetchTabImages(name)}
-              disabled={isLoading && selectedTab === name}
-            >
-              {name}
-              {selectedTab === name && (
-                <motion.div 
-                  className="absolute bottom-0 left-0 h-0.5 bg-white"
-                  layoutId="activeTab"
-                  initial={{ width: 0 }}
-                  animate={{ width: '100%' }}
-                  transition={{ duration: 0.3 }}
-                />
-              )}
-            </button>
-          ))}
+        <div className="flex flex-col gap-2 mt-4 z-10 justify-center">
+          <div className="flex gap-2 justify-center">
+            {collectionNames.map((name) => (
+              <button
+                key={name}
+                className={`px-4 py-2 rounded-lg font-semibold text-sm transition border relative overflow-hidden ${
+                  selectedTab === name
+                    ? "bg-white text-black border-white"
+                    : "bg-transparent text-white border-white/30 hover:bg-white/10"
+                }`}
+                onClick={() => handleTabChange(name)}
+                onMouseEnter={() => prefetchTabImages(name)}
+                disabled={isLoading && selectedTab === name}
+              >
+                <div className="flex flex-col items-center">
+                  <span>{name}</span>
+                  <span className="text-xs opacity-70">
+                    {collections[name]?.length || 0} photos
+                  </span>
+                </div>
+                {selectedTab === name && (
+                  <motion.div 
+                    className="absolute bottom-0 left-0 h-0.5 bg-white"
+                    layoutId="activeTab"
+                    initial={{ width: 0 }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 0.3 }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+          
+          {/* Loading Progress */}
+          {/* {isLoading && (
+            <div className="flex justify-center">
+              <span className="text-sm text-white/70">
+                Loading {loadedImagesCount} of {visibleImagesCount} images...
+              </span>
+            </div>
+          )} */}
         </div>
       </div>
       
@@ -405,13 +532,38 @@ export default function Gallery({ collections }: GalleryProps) {
             </div>
             
             {/* Loading more trigger - invisible element to detect when user scrolls near bottom */}
-            {visibleImagesCount < allImages.length && (
+            {visibleImagesCount < allImages.length && infiniteScrollEnabled[selectedTab] && (
               <div 
                 ref={loadMoreTriggerRef} 
                 className="w-full h-60 opacity-0 my-8"
                 aria-hidden="true"
+                id={`load-more-trigger-${selectedTab}`}
               >
                 {/* Invisible loading trigger */}
+              </div>
+            )}
+
+            {/* Load More button as fallback */}
+            {visibleImagesCount < allImages.length && (
+              <div className="w-full flex justify-center my-8">
+                <FadeInImageWrapper>
+                  <motion.button
+                    onClick={() => {
+                      setVisibleImagesCounts(prev => ({
+                        ...prev,
+                        [selectedTab]: Math.min(
+                          prev[selectedTab] + INFINITE_SCROLL_CONFIG.IMAGES_PER_BATCH * 2, 
+                          allImages.length
+                        ),
+                      }));
+                    }}
+                    className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Load More ({allImages.length - visibleImagesCount} remaining)
+                  </motion.button>
+                </FadeInImageWrapper>
               </div>
             )}
           </motion.div>
