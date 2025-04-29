@@ -4,6 +4,7 @@ import { draftMode } from "next/headers";
 import Gallery from "./components/gallery";
 import { ImageProps } from "./utils/types";
 import { Suspense } from "react";
+import PreloadImages from "./components/PreloadImages";
 
 export default function Home() {
   return (
@@ -82,19 +83,30 @@ export default function Home() {
         const day2: ImageProps[] = mapImages(data.day2.items);
         const afterparty: ImageProps[] = mapImages(data.afterparty.items);
 
+        // Combine all images for preloading
+        const allImages = [
+          ...openingParty,
+          ...day1,
+          ...day2,
+          ...afterparty,
+        ];
+
         return (
-          <main className="mx-auto max-w-[1960px] p-4">
-            <Suspense>
-              <Gallery
-                collections={{
-                  "Opening Party": openingParty,
-                  "Day 1": day1,
-                  "Day 2": day2,
-                  Afterparty: afterparty,
-                }}
-              />
-            </Suspense>
-          </main>
+          <>
+            <PreloadImages images={allImages} />
+            <main className="mx-auto max-w-[1960px] p-4">
+              <Suspense>
+                <Gallery
+                  collections={{
+                    "Opening Party": openingParty,
+                    "Day 1": day1,
+                    "Day 2": day2,
+                    Afterparty: afterparty,
+                  }}
+                />
+              </Suspense>
+            </main>
+          </>
         );
       }}
     </Pump>
