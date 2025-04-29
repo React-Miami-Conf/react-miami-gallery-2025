@@ -13,7 +13,7 @@ export const metadata: Metadata = {
       template: "React Miami Gallery",
       default: "React Miami 2025 Image Gallery",
     },
-    images: "/og.png",
+    images: `og.png?y=25`,
     siteName: "React Miami",
     locale: "en_US",
     type: "website",
