@@ -85,6 +85,7 @@ export default function SharedModal({
                     objectFit: "contain",
                   }}
                   onLoadingComplete={() => setLoaded(true)}
+                  quality={100}
                 />
               </motion.div>
             </AnimatePresence>
@@ -121,13 +122,22 @@ export default function SharedModal({
               <div className="absolute top-0 right-0 flex items-center gap-2 p-3 text-white">
                 <button
                   onClick={() =>
-                    downloadPhoto(`${currentImage?.url}`, `${index}.jpg`)
+                    downloadPhoto(`${currentImage?.webUrl}?original=true`, `${index}.jpg`)
                   }
                   className="rounded-full bg-black/50 p-2 text-white/75 backdrop-blur-lg transition hover:bg-black/75 hover:text-white"
                   title="Download fullsize version"
                 >
                   <ArrowDownTrayIcon className="h-5 w-5" />
                 </button>
+                <a
+                  href={`${currentImage?.webUrl}?original=true`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full bg-black/50 p-2 text-white/75 backdrop-blur-lg transition hover:bg-black/75 hover:text-white"
+                  title="Open original in new tab"
+                >
+                  <ArrowTopRightOnSquareIcon className="h-5 w-5" />
+                </a>
               </div>
               <div className="absolute top-0 left-0 flex items-center gap-2 p-3 text-white">
                 <button
@@ -151,7 +161,7 @@ export default function SharedModal({
                 className="mx-auto mt-6 mb-6 flex aspect-[3/2] h-14"
               >
                 <AnimatePresence initial={false}>
-                  {filteredImages?.map(({ id, url }: ImageProps) => (
+                  {filteredImages?.map(({ id, webUrl }: ImageProps) => (
                     <motion.button
                       initial={{
                         width: "0%",
@@ -182,7 +192,7 @@ export default function SharedModal({
                             ? "brightness-110 hover:brightness-110"
                             : "brightness-50 contrast-125 hover:brightness-75"
                         } h-full transform object-cover transition`}
-                        src={url}
+                        src={webUrl}
                       />
                     </motion.button>
                   ))}

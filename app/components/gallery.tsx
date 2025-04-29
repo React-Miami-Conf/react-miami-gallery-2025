@@ -10,6 +10,7 @@ import { useLastViewedPhoto } from "../utils/useLastViewedPhoto";
 import Leaves from "./Icons/Leaves";
 import Logo from "./Icons/Logo";
 import { AnimatePresence, motion } from "framer-motion";
+import { FaArrowUp } from "react-icons/fa";
 
 // Wrapper component for fade-in animation
 type FadeInImageWrapperProps = {
@@ -64,6 +65,7 @@ export default function Gallery({ collections }: GalleryProps) {
   const [loadedImagesCount, setLoadedImagesCount] = useState(0);
   const [scrollPercentage, setScrollPercentage] = useState(0);
   const [pixelsFromBottom, setPixelsFromBottom] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   
   // Add router for handling modal without page reload
   const router = useRouter();
@@ -301,6 +303,9 @@ export default function Gallery({ collections }: GalleryProps) {
       setScrollPercentage(scrolled);
       setPixelsFromBottom(Math.max(0, Math.round(bottom)));
       
+      // Show/hide scroll to top button
+      setShowScrollTop(scrollTop > 500);
+      
       // Backup method: If we're close to the bottom and the observer hasn't triggered,
       // manually load more images
       if (bottom < INFINITE_SCROLL_CONFIG.ROOT_MARGIN_PX / 2 && 
@@ -334,6 +339,14 @@ export default function Gallery({ collections }: GalleryProps) {
       prefetchTabImages(collectionNames[currentIndex - 1]);
     }
   }, [selectedTab, collectionNames, prefetchTabImages]);
+
+  // Jump to top function
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   // Function to render a gallery image
   const renderGalleryImage = (image: ImageProps, columnIndex: number, imageIndex: number) => {
@@ -398,6 +411,23 @@ export default function Gallery({ collections }: GalleryProps) {
 
   return (
     <div ref={scrollContainerRef}>
+      {/* Scroll to top button - Bottom left position */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+            onClick={scrollToTop}
+            className="fixed bottom-6 left-6 z-50 bg-black/70 hover:bg-black/90 text-white p-3 rounded-full shadow-lg"
+            aria-label="Scroll to top"
+          >
+            <FaArrowUp className="text-lg" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {/* Scroll Percentage Overlay (Debug Mode) */}
       {INFINITE_SCROLL_CONFIG.DEBUG_MODE && (
         <div className="fixed bottom-4 right-4 bg-black/70 text-white px-4 py-3 rounded-md font-mono text-sm z-50 flex flex-col">
@@ -426,43 +456,47 @@ export default function Gallery({ collections }: GalleryProps) {
         />
       )}
 
-      {/* Header Card */}
-      <div className="after:content relative mb-3 flex h-[340px] flex-col items-center justify-end gap-3 overflow-hidden rounded-lg bg-white/10 px-6 pb-10 pt-28 text-center text-white shadow-highlight after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:shadow-highlight lg:pt-0">
+      {/* Header Card - Improved for better mobile display */}
+      <div className="after:content relative mb-6 flex h-auto min-h-[480px] sm:min-h-[420px] flex-col items-center justify-between overflow-hidden rounded-lg bg-white/10 px-4 sm:px-6 pb-4 pt-10 sm:pt-20 text-center text-white shadow-highlight after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:shadow-highlight">
         <div className="absolute inset-0 flex items-center justify-center opacity-20">
           <span className="flex max-h-full max-w-full items-center justify-center">
             <Leaves />
           </span>
-          <span className="absolute left-0 right-0 bottom-0 h-[180px] bg-gradient-to-b from-black/0 via-black to-black"></span>
+          <span className="absolute left-0 right-0 bottom-0 h-[240px] bg-gradient-to-b from-black/0 via-black to-black"></span>
         </div>
-        <Logo />
-        <h1 className="mt-6 mb-2 text-base font-bold uppercase tracking-widest">
-          2025 Event Photos
-        </h1>
         
-        {/* Tabs */}
-        <div className="flex flex-col gap-2 mt-4 z-10 justify-center">
-          <div className="flex gap-2 justify-center">
+        {/* Top section with logo and title */}
+        <div className="flex flex-col items-center z-10 pt-8 sm:pt-4">
+          <Logo />
+          <h1 className="mt-6 mb-4 text-xl sm:text-lg font-bold uppercase tracking-widest">
+            2025 Event Photos
+          </h1>
+        </div>
+        
+        {/* Tabs - Modified to stack on mobile with better spacing */}
+        <div className="flex flex-col gap-3 z-10 justify-center w-full max-w-md mx-auto mb-4 sm:mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 w-full">
             {collectionNames.map((name) => (
               <button
                 key={name}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition border relative overflow-hidden ${
+                className={`px-4 py-3 rounded-lg font-semibold text-sm transition border relative overflow-hidden w-full ${
                   selectedTab === name
-                    ? "bg-white text-black border-white"
-                    : "bg-transparent text-white border-white/30 hover:bg-white/10"
+                    ? "bg-white text-black border-white shadow-md"
+                    : "bg-black/30 text-white border-white/30 hover:bg-white/10"
                 }`}
                 onClick={() => handleTabChange(name)}
                 onMouseEnter={() => prefetchTabImages(name)}
                 disabled={isLoading && selectedTab === name}
               >
                 <div className="flex flex-col items-center">
-                  <span>{name}</span>
-                  <span className="text-xs opacity-70">
+                  <span className="font-medium">{name}</span>
+                  <span className="text-xs mt-1 opacity-70">
                     {collections[name]?.length || 0} photos
                   </span>
                 </div>
                 {selectedTab === name && (
                   <motion.div 
-                    className="absolute bottom-0 left-0 h-0.5 bg-white"
+                    className="absolute bottom-0 left-0 h-1 bg-white"
                     layoutId="activeTab"
                     initial={{ width: 0 }}
                     animate={{ width: '100%' }}
