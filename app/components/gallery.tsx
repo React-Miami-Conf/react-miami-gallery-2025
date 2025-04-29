@@ -9,6 +9,7 @@ import Modal from "./modal";
 import { useLastViewedPhoto } from "../utils/useLastViewedPhoto";
 import Leaves from "./Icons/Leaves";
 import Logo from "./Icons/Logo";
+import PreloadImages from "./PreloadImages";
 
 type GalleryProps = {
   collections: {
@@ -37,6 +38,8 @@ export default function Gallery({ collections }: GalleryProps) {
 
   return (
     <div>
+      {/* Preload only the images for the current tab */}
+      <PreloadImages images={images} />
       {photoId && (
         <Modal
           images={images}
