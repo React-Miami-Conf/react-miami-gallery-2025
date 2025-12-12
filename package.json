@@ -14,7 +14,7 @@
     "@vercel/analytics": "^1.5.0",
     "basehub": "^5.2.1",
     "framer-motion": "^12.9.2",
-    "next": "^15.3.6",
+    "next": "^15.3.8",
     "photoswipe": "^5.4.4",
     "react": "^18",
     "react-dom": "^18",
